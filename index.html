@@ -20,7 +20,7 @@
       color: white;
       padding: 10px;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 14px;
       z-index: 999;
       pointer-events: none;
     }
@@ -130,47 +130,37 @@
     function startAR() {
       log("Iniciando sistema AR...");
       
-      // Crear escena dinámicamente
-      const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('mindar-image', {
-        imageTargetSrc: 'https://nikoalerce.github.io/Cool/alephinsta.jpg',
-        maxTrack: 1,
-        filterMinCF: 0.0001,
-        filterBeta: 0.001,
-        warmupTolerance: 5,
-        missTolerance: 5
-      });
-      sceneEl.setAttribute('color-space', 'sRGB');
-      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
+      // Eliminar elementos AR anteriores si existen
+      const oldScene = document.querySelector('a-scene');
+      if (oldScene) {
+        oldScene.parentNode.removeChild(oldScene);
+      }
       
-      const assetsEl = document.createElement('a-assets');
+      // Crear escena directamente en el DOM en lugar de dinámicamente
+      const sceneHTML = `
+        <a-scene mindar-image="imageTargetSrc: https://nikoalerce.github.io/Cool/alephinsta.jpg; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5" 
+                color-space="sRGB" 
+                renderer="colorManagement: true; physicallyCorrectLights" 
+                vr-mode-ui="enabled: false" 
+                device-orientation-permission-ui="enabled: false">
+          <a-assets>
+            <a-asset-item id="modelo" src="https://nikoalerce.github.io/Cool/aaa.glb"></a-asset-item>
+          </a-assets>
+          
+          <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+          
+          <a-entity mindar-image-target="targetIndex: 0">
+            <a-gltf-model id="modeloAR" rotation="0 0 0" position="0 -0.25 0" scale="0.25 0.25 0.25" src="#modelo" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"></a-gltf-model>
+          </a-entity>
+        </a-scene>
+      `;
       
-      const modelAsset = document.createElement('a-asset-item');
-      modelAsset.setAttribute('id', 'modelo');
-      modelAsset.setAttribute('src', 'https://nikoalerce.github.io/Cool/aaa.glb');
-      assetsEl.appendChild(modelAsset);
+      document.body.insertAdjacentHTML('beforeend', sceneHTML);
       
-      const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 0 0');
-      cameraEl.setAttribute('look-controls', 'enabled: false');
-      
-      const targetEl = document.createElement('a-entity');
-      targetEl.setAttribute('mindar-image-target', 'targetIndex: 0');
-      
-      const modelEl = document.createElement('a-gltf-model');
-      modelEl.setAttribute('id', 'modeloAR');
-      modelEl.setAttribute('rotation', '0 0 0');
-      modelEl.setAttribute('position', '0 0 0.1');
-      modelEl.setAttribute('scale', '0.08 0.08 0.08');
-      modelEl.setAttribute('src', '#modelo');
-      
-      targetEl.appendChild(modelEl);
-      sceneEl.appendChild(assetsEl);
-      sceneEl.appendChild(cameraEl);
-      sceneEl.appendChild(targetEl);
-      document.body.appendChild(sceneEl);
+      // Referencias a los elementos creados
+      const sceneEl = document.querySelector('a-scene');
+      const targetEl = document.querySelector('a-entity[mindar-image-target]');
+      const modelEl = document.querySelector('#modeloAR');
       
       // Eventos
       sceneEl.addEventListener('loaded', function() {
@@ -178,20 +168,32 @@
       });
       
       targetEl.addEventListener('targetFound', function() {
-        log("¡Marcador encontrado!");
+        log("¡Marcador encontrado! El modelo 3D debería ser visible.");
+        // Asegurar que el círculo de carga desaparezca
+        const loadingCircle = document.querySelector('.a-loader-title');
+        if (loadingCircle) loadingCircle.style.display = 'none';
       });
       
       targetEl.addEventListener('targetLost', function() {
-        log("Marcador perdido. Vuelva a mostrar el marcador a la cámara.");
+        log("Marcador perdido. Vuelva a mostrar el marcador.");
       });
       
       modelEl.addEventListener('model-loaded', function() {
-        log("Modelo 3D cargado correctamente.");
+        log("Modelo 3D cargado correctamente y visible.");
+        // Asegurar que el círculo de carga desaparezca
+        const loadingCircle = document.querySelector('.a-loader-title');
+        if (loadingCircle) loadingCircle.style.display = 'none';
       });
       
       modelEl.addEventListener('model-error', function() {
         log("Error al cargar el modelo 3D");
       });
+      
+      // Forzar ocultación del círculo de carga después de 5 segundos
+      setTimeout(function() {
+        const loadingCircle = document.querySelector('.a-loader-title');
+        if (loadingCircle) loadingCircle.style.display = 'none';
+      }, 5000);
     }
     
     // Iniciar la aplicación
