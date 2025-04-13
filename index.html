@@ -37,8 +37,8 @@
       // Componente para mejorar la iluminación de los modelos
       AFRAME.registerComponent('better-gltf', {
         schema: {
-          emission: {type: 'number', default: 0.2},
-          intensity: {type: 'number', default: 0.8}
+          emission: {type: 'number', default: 0.0},
+          intensity: {type: 'number', default: 0.3}
         },
         init: function() {
           this.el.addEventListener('model-loaded', () => {
@@ -60,10 +60,11 @@
         },
         enhanceMaterial: function(material) {
           // Asegurar que el material tenga buenas propiedades para AR
-          material.roughness = 0.5;
-          material.metalness = 0.6;
-          material.emissive = new THREE.Color(0xffffff);
-          material.emissiveIntensity = this.data.emission;
+          material.roughness = 0.7;
+          material.metalness = 0.3;
+          // Eliminar la emisión completamente
+          material.emissive = new THREE.Color(0x000000);
+          material.emissiveIntensity = 0;
           material.needsUpdate = true;
         }
       });
@@ -145,7 +146,7 @@
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false" 
              loading-screen="enabled: false"
-             renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true;">
+             renderer="colorManagement: false; physicallyCorrectLights: false; antialias: true;">
       
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
@@ -155,24 +156,24 @@
       
       <a-entity mindar-image-target="targetIndex: 0">
         <!-- Luces mejoradas -->
-        <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+        <a-light type="ambient" color="#333" intensity="0.2"></a-light>
         <a-light type="directional" 
                 color="#FFF" 
-                intensity="0.7" 
+                intensity="0.3" 
                 position="0 5 5" 
                 target="#model-container"
                 cast-shadow="true"></a-light>
         <a-light type="point" 
                 color="#44F" 
-                intensity="0.3" 
+                intensity="0.1" 
                 position="-2 3 0"></a-light>
         <a-light type="point" 
                 color="#F44" 
-                intensity="0.3" 
+                intensity="0.1" 
                 position="2 3 0"></a-light>
         <a-light type="point" 
                 color="#4F4" 
-                intensity="0.3" 
+                intensity="0.1" 
                 position="0 3 3"></a-light>
         
         <!-- Contenedor del modelo para facilitar la animación y el posicionamiento -->
@@ -185,7 +186,7 @@
             scale="0.5 0.5 0.5" 
             gltf-model="#model" 
             animation-mixer="clip: *; loop: repeat; timeScale: 1.5"
-            better-gltf="emission: 0.2; intensity: 0.8"
+            better-gltf="emission: 0.0; intensity: 0.3"
             rotate-model="speed: 1.0"
             shadow="cast: true; receive: true">
             
