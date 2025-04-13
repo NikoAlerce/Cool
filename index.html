@@ -2,205 +2,38 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Visualizador AR Simple</title>
-  
+  <title>AR Simple</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
-  
   <style>
     body {
       margin: 0;
+    }
+    .example-container {
       overflow: hidden;
-    }
-    #debug {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 14px;
-      z-index: 999;
-      pointer-events: none;
-    }
-    #loading {
-      position: fixed;
-      top: 0;
-      left: 0;
+      position: absolute;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      color: white;
-      font-family: Arial, sans-serif;
-      font-size: 20px;
-      text-align: center;
-    }
-    .btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background: white;
-      color: black;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="loading">
-    <div>Inicializando AR...</div>
-    <div id="progress">Cargando recursos (0%)</div>
-    <button id="startButton" class="btn" style="display:none;">Iniciar AR</button>
+  <div class="example-container">
+    <a-scene mindar-image="imageTargetSrc: https://nikoalerce.github.io/Cool/alephinsta.jpg;" 
+             color-space="sRGB" 
+             renderer="colorManagement: true, physicallyCorrectLights" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false">
+      <a-assets>
+        <a-asset-item id="modelo" src="https://nikoalerce.github.io/Cool/aaa.glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.5 0.5 0.5" src="#modelo"></a-gltf-model>
+      </a-entity>
+    </a-scene>
   </div>
-  
-  <div id="debug">Estado: Inicializando...</div>
-
-  <script>
-    // Sistema de debug
-    const debugEl = document.getElementById('debug');
-    const loadingEl = document.getElementById('loading');
-    const progressEl = document.getElementById('progress');
-    const startButtonEl = document.getElementById('startButton');
-    
-    function log(message) {
-      console.log(message);
-      debugEl.textContent = "Estado: " + message;
-    }
-
-    // Empezar con un botón para evitar problemas de inicio automático
-    startButtonEl.addEventListener('click', function() {
-      loadingEl.style.display = 'none';
-      startAR();
-    });
-
-    // Precargar recursos
-    let resourcesLoaded = false;
-    function preloadResources() {
-      log("Precargando modelo 3D y marcador...");
-      
-      const total = 2;
-      let loaded = 0;
-      
-      // Precargar imagen del marcador
-      const markerImg = new Image();
-      markerImg.crossOrigin = "anonymous";
-      markerImg.onload = resourceLoaded;
-      markerImg.onerror = function() {
-        log("Error al cargar el marcador");
-        progressEl.textContent = "Error al cargar el marcador";
-      };
-      markerImg.src = "https://nikoalerce.github.io/Cool/alephinsta.jpg";
-      
-      // Precargar modelo 3D
-      const request = new XMLHttpRequest();
-      request.open('GET', 'https://nikoalerce.github.io/Cool/aaa.glb', true);
-      request.responseType = 'arraybuffer';
-      request.onprogress = function(e) {
-        if (e.lengthComputable) {
-          const percent = Math.floor((e.loaded / e.total) * 100);
-          progressEl.textContent = `Cargando modelo 3D (${percent}%)`;
-        }
-      };
-      request.onload = resourceLoaded;
-      request.onerror = function() {
-        log("Error al cargar el modelo 3D");
-        progressEl.textContent = "Error al cargar el modelo 3D";
-      };
-      request.send();
-      
-      function resourceLoaded() {
-        loaded++;
-        progressEl.textContent = `Recursos cargados (${Math.floor((loaded/total)*100)}%)`;
-        
-        if (loaded >= total) {
-          resourcesLoaded = true;
-          progressEl.textContent = "¡Recursos cargados! Listo para iniciar.";
-          startButtonEl.style.display = 'block';
-        }
-      }
-    }
-    
-    function startAR() {
-      log("Iniciando sistema AR...");
-      
-      // Eliminar elementos AR anteriores si existen
-      const oldScene = document.querySelector('a-scene');
-      if (oldScene) {
-        oldScene.parentNode.removeChild(oldScene);
-      }
-      
-      // Crear escena directamente en el DOM en lugar de dinámicamente
-      const sceneHTML = `
-        <a-scene mindar-image="imageTargetSrc: https://nikoalerce.github.io/Cool/alephinsta.jpg; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5" 
-                color-space="sRGB" 
-                renderer="colorManagement: true; physicallyCorrectLights" 
-                vr-mode-ui="enabled: false" 
-                device-orientation-permission-ui="enabled: false">
-          <a-assets>
-            <a-asset-item id="modelo" src="https://nikoalerce.github.io/Cool/aaa.glb"></a-asset-item>
-          </a-assets>
-          
-          <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-          
-          <a-entity mindar-image-target="targetIndex: 0">
-            <a-gltf-model id="modeloAR" rotation="0 0 0" position="0 -0.25 0" scale="0.25 0.25 0.25" src="#modelo" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"></a-gltf-model>
-          </a-entity>
-        </a-scene>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', sceneHTML);
-      
-      // Referencias a los elementos creados
-      const sceneEl = document.querySelector('a-scene');
-      const targetEl = document.querySelector('a-entity[mindar-image-target]');
-      const modelEl = document.querySelector('#modeloAR');
-      
-      // Eventos
-      sceneEl.addEventListener('loaded', function() {
-        log("Escena cargada, esperando marcador...");
-      });
-      
-      targetEl.addEventListener('targetFound', function() {
-        log("¡Marcador encontrado! El modelo 3D debería ser visible.");
-        // Asegurar que el círculo de carga desaparezca
-        const loadingCircle = document.querySelector('.a-loader-title');
-        if (loadingCircle) loadingCircle.style.display = 'none';
-      });
-      
-      targetEl.addEventListener('targetLost', function() {
-        log("Marcador perdido. Vuelva a mostrar el marcador.");
-      });
-      
-      modelEl.addEventListener('model-loaded', function() {
-        log("Modelo 3D cargado correctamente y visible.");
-        // Asegurar que el círculo de carga desaparezca
-        const loadingCircle = document.querySelector('.a-loader-title');
-        if (loadingCircle) loadingCircle.style.display = 'none';
-      });
-      
-      modelEl.addEventListener('model-error', function() {
-        log("Error al cargar el modelo 3D");
-      });
-      
-      // Forzar ocultación del círculo de carga después de 5 segundos
-      setTimeout(function() {
-        const loadingCircle = document.querySelector('.a-loader-title');
-        if (loadingCircle) loadingCircle.style.display = 'none';
-      }, 5000);
-    }
-    
-    // Iniciar la aplicación
-    document.addEventListener('DOMContentLoaded', function() {
-      log("Página cargada. Verificando recursos...");
-      preloadResources();
-    });
-  </script>
 </body>
 </html> 
