@@ -6,6 +6,7 @@
     <title>AR Marker Test</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
     <style>
       body, html {
         margin: 0;
@@ -52,7 +53,12 @@
       Lo sentimos, la realidad aumentada no está disponible en tu dispositivo.
     </div>
     
-    <a-scene mindar-image="imageTargetSrc: ./alephinsta.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" loading-screen="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./alephinsta.mind;" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false" 
+             loading-screen="enabled: false"
+             renderer="colorManagement: true; physicallyCorrectLights: true;">
+      
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-assets>
@@ -60,7 +66,21 @@
       </a-assets>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.5 0.5 0.5" src="#model" animation-mixer></a-gltf-model>
+        <!-- Luces -->
+        <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+        <a-light type="directional" color="#FFF" intensity="1" position="0 10 10"></a-light>
+        <a-light type="point" color="#FFF" intensity="1" position="0 3 0"></a-light>
+        
+        <!-- Modelo 3D con animación -->
+        <a-entity 
+          position="0 0 0" 
+          rotation="0 0 0" 
+          scale="0.5 0.5 0.5" 
+          gltf-model="#model" 
+          animation-mixer="clip: *; loop: repeat; timeScale: 1"
+          material="metalness: 0.5; roughness: 0.5"
+          shadow="cast: true; receive: true">
+        </a-entity>
       </a-entity>
     </a-scene>
 
@@ -89,6 +109,12 @@
         const targetEntity = document.querySelector('[mindar-image-target]');
         targetEntity.addEventListener('targetFound', function() {
           console.log("Target encontrado");
+          
+          // Reiniciar animación cuando se encuentra el target
+          const model = document.querySelector('[animation-mixer]');
+          if (model) {
+            model.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1');
+          }
         });
         
         targetEntity.addEventListener('targetLost', function() {
