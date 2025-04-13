@@ -151,7 +151,7 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-assets>
-        <video id="video-asset" src="./aleph.mp4" preload="auto" loop="true" playsinline crossorigin="anonymous"></video>
+        <video id="video-asset" src="./aleph.mp4" preload="auto" loop="true" playsinline crossorigin="anonymous" muted></video>
       </a-assets>
       
       <a-entity mindar-image-target="targetIndex: 0">
@@ -168,7 +168,8 @@
             rotation="0 0 0" 
             width="1.5"
             height="1" 
-            scale="0.5 0.5 0.5">
+            scale="1 1 1"
+            material="shader: flat; transparent: true; side: double; alphaTest: 0.5">
             
             <!-- Animaciones A-Frame adicionales -->
             <a-animation attribute="position" 
@@ -179,7 +180,7 @@
                         repeat="indefinite"></a-animation>
                         
             <a-animation attribute="rotation" 
-                        dur="10000" 
+                        dur="15000" 
                         easing="linear" 
                         to="0 360 0" 
                         repeat="indefinite"></a-animation>
@@ -205,7 +206,15 @@
         // Ocultar pantalla de carga cuando todo esté listo
         sceneEl.addEventListener('loaded', function () {
           document.getElementById('loading').style.display = 'none';
-          debugPanel.textContent = 'Estado: Escena cargada v3.0. Busca el marcador.';
+          debugPanel.textContent = 'Estado: Escena cargada v3.1. Busca el marcador.';
+          
+          // Asegurar que el video esté listo para reproducirse
+          videoEl.load();
+          // Intentamos reproducir el video una vez para evitar problemas de autoplay
+          videoEl.muted = true;
+          videoEl.play().catch(error => {
+            console.log('Autoplay inicial fallido, espere a interactuar: ', error);
+          });
         });
         
         // Manejar errores
@@ -217,39 +226,72 @@
         
         // Comprobar si el video se carga correctamente
         videoEl.addEventListener('loadeddata', function() {
-          debugPanel.textContent = 'Estado: Video cargado correctamente v3.0';
+          debugPanel.textContent = 'Estado: Video cargado correctamente v3.1';
           console.log('Video cargado correctamente');
         });
         
         videoEl.addEventListener('error', function(error) {
-          debugPanel.textContent = 'Error al cargar video: ' + error;
+          debugPanel.textContent = 'Error al cargar video: ' + error.message;
           console.error('Error al cargar el video:', error);
+        });
+        
+        // Monitorear estado del video
+        videoEl.addEventListener('playing', function() {
+          console.log('Video reproduciendo');
+          debugPanel.textContent = 'Estado: Video reproduciendo v3.1';
+        });
+        
+        videoEl.addEventListener('pause', function() {
+          console.log('Video pausado');
         });
         
         // Mostrar mensaje cuando el target es encontrado
         const targetEntity = document.querySelector('[mindar-image-target]');
         targetEntity.addEventListener('targetFound', function() {
-          debugPanel.textContent = 'Estado: Target encontrado! v3.0';
+          debugPanel.textContent = 'Estado: Target encontrado! v3.1';
           console.log("Target encontrado");
           
+          // Asegurar que el video es visible
+          const videoPlane = document.querySelector("#ar-video");
+          videoPlane.setAttribute("visible", true);
+          
           // Reproducir video cuando se encuentra el target
-          videoEl.play().catch(error => {
-            console.error('Error reproduciendo video:', error);
-            debugPanel.textContent = 'Error reproduciendo video. Toca la pantalla.';
-          });
+          if (videoEl.paused) {
+            videoEl.play().catch(error => {
+              console.error('Error reproduciendo video:', error);
+              debugPanel.textContent = 'Error reproduciendo video. Toca la pantalla.';
+            });
+          }
         });
         
         targetEntity.addEventListener('targetLost', function() {
-          debugPanel.textContent = 'Estado: Target perdido v3.0';
+          debugPanel.textContent = 'Estado: Target perdido v3.1';
           console.log("Target perdido");
           // Pausa el video cuando se pierde el target
           videoEl.pause();
         });
         
-        // Manejar interacción del usuario (necesario en algunos navegadores)
-        document.addEventListener('click', function() {
+        // Manejar interacción del usuario (necesario en muchos navegadores)
+        document.body.addEventListener('click', function() {
+          debugPanel.textContent = 'Clic detectado. Intentando reproducir video...';
+          
           if (videoEl.paused) {
-            videoEl.play().catch(e => console.error('Error al reproducir video después del clic:', e));
+            // Primero intentamos reproducir con mute (más permisivo)
+            videoEl.muted = true;
+            videoEl.play()
+              .then(() => {
+                debugPanel.textContent = 'Video reproduciendo (muted)';
+                // Después intentamos quitar el mute
+                videoEl.muted = false;
+              })
+              .catch(error => {
+                console.error('Error al reproducir video después del clic:', error);
+                debugPanel.textContent = 'Error: ' + error.message;
+              });
+          } else {
+            // Si ya está reproduciendo, intentar quitar el mute
+            videoEl.muted = false;
+            debugPanel.textContent = 'Video ya reproduciendo, quitando mute';
           }
         });
       });
