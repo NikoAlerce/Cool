@@ -21,6 +21,7 @@
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 9999;
@@ -28,13 +29,30 @@
       font-family: Arial, sans-serif;
       font-size: 24px;
     }
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    .button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: white;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
-  <div id="loading">Cargando, por favor espere...</div>
+  <div id="loading">
+    <div>Cargando AR...</div>
+    <div id="status">Iniciando cámara...</div>
+    <button id="reload" class="button" style="display: none;">Reintentar</button>
+  </div>
 
-  <a-scene mindar-image="imageTargetSrc: https://nikoalerce.github.io/Cool/alephinsta.jpg; maxTrack: 1" color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" loading-screen="enabled: false">
-    <a-assets>
+  <a-scene mindar-image="imageTargetSrc: https://nikoalerce.github.io/Cool/alephinsta.jpg; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001" color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" loading-screen="enabled: false">
+    <a-assets timeout="10000">
       <a-asset-item id="modelo" src="https://nikoalerce.github.io/Cool/aaa.glb" response-type="arraybuffer"></a-asset-item>
     </a-assets>
 
@@ -42,29 +60,66 @@
 
     <a-entity mindar-image-target="targetIndex: 0">
       <!-- Modelo 3D -->
-      <a-gltf-model rotation="0 0 0" position="0 0 0.1" scale="0.1 0.1 0.1" src="#modelo"></a-gltf-model>
+      <a-gltf-model id="modeloAR" rotation="0 0 0" position="0 0 0.1" scale="0.1 0.1 0.1" src="#modelo" visible="false"></a-gltf-model>
     </a-entity>
   </a-scene>
 
   <script>
     const sceneEl = document.querySelector('a-scene');
     const loadingEl = document.querySelector('#loading');
+    const statusEl = document.querySelector('#status');
+    const reloadBtn = document.querySelector('#reload');
+    const modelEl = document.querySelector('#modeloAR');
     
-    // Ocultar pantalla de carga cuando todo esté listo
+    // Reintentar carga
+    reloadBtn.addEventListener('click', function() {
+      window.location.reload();
+    });
+
+    // Estado de carga
     sceneEl.addEventListener('loaded', function () {
-      loadingEl.style.display = 'none';
+      statusEl.textContent = "Cámara lista. Buscando marcador...";
+    });
+    
+    sceneEl.addEventListener('arError', function(ev) {
+      console.error('AR Error:', ev);
+      statusEl.textContent = "Error al iniciar AR. Por favor, recarga la página.";
+      reloadBtn.style.display = 'block';
+    });
+
+    // Detectar cuando se encuentra el marcador
+    const targetEl = document.querySelector('a-entity[mindar-image-target]');
+    targetEl.addEventListener('targetFound', function() {
+      console.log('¡Marcador encontrado!');
+      statusEl.textContent = "¡Marcador encontrado! Cargando modelo 3D...";
+      modelEl.setAttribute('visible', true);
+    });
+    
+    targetEl.addEventListener('targetLost', function() {
+      console.log('Marcador perdido');
+      statusEl.textContent = "Marcador perdido. Mueva la cámara más lentamente.";
+      modelEl.setAttribute('visible', false);
     });
 
     // Comprobar si el modelo se carga correctamente
-    const modelEl = document.querySelector('a-gltf-model');
     modelEl.addEventListener('model-loaded', function() {
       console.log('Modelo cargado exitosamente');
+      loadingEl.style.display = 'none';
     });
     
     modelEl.addEventListener('model-error', function(e) {
       console.error('Error al cargar el modelo:', e);
-      loadingEl.innerHTML = 'Error al cargar el modelo. Por favor, recarga la página.';
+      statusEl.textContent = "Error al cargar el modelo 3D. Por favor, recarga la página.";
+      reloadBtn.style.display = 'block';
     });
+    
+    // Timeout si no se carga después de 30 segundos
+    setTimeout(function() {
+      if (loadingEl.style.display !== 'none') {
+        statusEl.textContent = "La carga está tomando demasiado tiempo. Verifique que el marcador sea visible y esté bien iluminado.";
+        reloadBtn.style.display = 'block';
+      }
+    }, 30000);
   </script>
 </body>
 </html> 
