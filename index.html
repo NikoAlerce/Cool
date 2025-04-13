@@ -151,44 +151,24 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-assets>
-        <a-asset-item id="model" src="./aaa.glb"></a-asset-item>
+        <video id="video-asset" src="./aleph.mp4" preload="auto" loop="true" playsinline crossorigin="anonymous"></video>
       </a-assets>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- Luces mejoradas -->
-        <a-light type="ambient" color="#333" intensity="0.2"></a-light>
-        <a-light type="directional" 
-                color="#FFF" 
-                intensity="0.3" 
-                position="0 5 5" 
-                target="#model-container"
-                cast-shadow="true"></a-light>
-        <a-light type="point" 
-                color="#44F" 
-                intensity="0.1" 
-                position="-2 3 0"></a-light>
-        <a-light type="point" 
-                color="#F44" 
-                intensity="0.1" 
-                position="2 3 0"></a-light>
-        <a-light type="point" 
-                color="#4F4" 
-                intensity="0.1" 
-                position="0 3 3"></a-light>
+        <!-- Sin necesidad de tantas luces para video -->
+        <a-light type="ambient" color="#FFF" intensity="1.0"></a-light>
         
-        <!-- Contenedor del modelo para facilitar la animación y el posicionamiento -->
-        <a-entity id="model-container" position="0 0 0" rotation="0 0 0">
-          <!-- Modelo 3D con animación y mejoras -->
-          <a-entity 
-            id="3d-model"
+        <!-- Contenedor del video para facilitar la animación y el posicionamiento -->
+        <a-entity id="video-container" position="0 0 0" rotation="0 0 0">
+          <!-- Video con animación -->
+          <a-video 
+            id="ar-video"
+            src="#video-asset"
             position="0 0 0" 
             rotation="0 0 0" 
-            scale="0.5 0.5 0.5" 
-            gltf-model="#model" 
-            animation-mixer="clip: *; loop: repeat; timeScale: 1.5"
-            better-gltf="emission: 0.0; intensity: 0.3"
-            rotate-model="speed: 1.0"
-            shadow="cast: true; receive: true">
+            width="1.5"
+            height="1" 
+            scale="0.5 0.5 0.5">
             
             <!-- Animaciones A-Frame adicionales -->
             <a-animation attribute="position" 
@@ -197,7 +177,13 @@
                         easing="ease-in-out-sine" 
                         to="0 0.2 0" 
                         repeat="indefinite"></a-animation>
-          </a-entity>
+                        
+            <a-animation attribute="rotation" 
+                        dur="10000" 
+                        easing="linear" 
+                        to="0 360 0" 
+                        repeat="indefinite"></a-animation>
+          </a-video>
         </a-entity>
       </a-entity>
     </a-scene>
@@ -205,6 +191,7 @@
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const debugPanel = document.getElementById('debug-panel');
+        const videoEl = document.getElementById('video-asset');
         
         // Verificar soporte para AR
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -218,7 +205,7 @@
         // Ocultar pantalla de carga cuando todo esté listo
         sceneEl.addEventListener('loaded', function () {
           document.getElementById('loading').style.display = 'none';
-          debugPanel.textContent = 'Estado: Escena cargada v2.0. Busca el marcador.';
+          debugPanel.textContent = 'Estado: Escena cargada v3.0. Busca el marcador.';
         });
         
         // Manejar errores
@@ -228,33 +215,42 @@
           console.error("AR Error:", ev.detail.error);
         });
         
-        // Comprobar si el modelo se carga correctamente
-        const model = document.getElementById('3d-model');
-        model.addEventListener('model-loaded', function() {
-          debugPanel.textContent = 'Estado: Modelo cargado correctamente v2.0';
-          console.log('Modelo 3D cargado correctamente');
+        // Comprobar si el video se carga correctamente
+        videoEl.addEventListener('loadeddata', function() {
+          debugPanel.textContent = 'Estado: Video cargado correctamente v3.0';
+          console.log('Video cargado correctamente');
         });
         
-        model.addEventListener('model-error', function(error) {
-          debugPanel.textContent = 'Error al cargar modelo: ' + error;
-          console.error('Error al cargar el modelo:', error);
+        videoEl.addEventListener('error', function(error) {
+          debugPanel.textContent = 'Error al cargar video: ' + error;
+          console.error('Error al cargar el video:', error);
         });
         
         // Mostrar mensaje cuando el target es encontrado
         const targetEntity = document.querySelector('[mindar-image-target]');
         targetEntity.addEventListener('targetFound', function() {
-          debugPanel.textContent = 'Estado: Target encontrado! v2.0';
+          debugPanel.textContent = 'Estado: Target encontrado! v3.0';
           console.log("Target encontrado");
           
-          // Reiniciar animación cuando se encuentra el target
-          if (model) {
-            model.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1.5');
-          }
+          // Reproducir video cuando se encuentra el target
+          videoEl.play().catch(error => {
+            console.error('Error reproduciendo video:', error);
+            debugPanel.textContent = 'Error reproduciendo video. Toca la pantalla.';
+          });
         });
         
         targetEntity.addEventListener('targetLost', function() {
-          debugPanel.textContent = 'Estado: Target perdido v2.0';
+          debugPanel.textContent = 'Estado: Target perdido v3.0';
           console.log("Target perdido");
+          // Pausa el video cuando se pierde el target
+          videoEl.pause();
+        });
+        
+        // Manejar interacción del usuario (necesario en algunos navegadores)
+        document.addEventListener('click', function() {
+          if (videoEl.paused) {
+            videoEl.play().catch(e => console.error('Error al reproducir video después del clic:', e));
+          }
         });
       });
     </script>
